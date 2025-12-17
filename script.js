@@ -14,12 +14,19 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     // Load data from localStorage or initialize
-    let supplies = JSON.parse(localStorage.getItem('supplies')) || {
-        lids: 5000,
-        bottles: 5000,
-        manuals: 5000
-    };
-let oilData = JSON.parse(localStorage.getItem('oilData')) || {};
+    let supplies = {};
+let oilData = {};
+
+db.collection("app").doc("supplies").get().then(doc => {
+    supplies = doc.exists ? doc.data() : { lids: 5000, bottles: 5000, manuals: 5000 };
+    renderSupplies();
+});
+
+db.collection("app").doc("oils").get().then(doc => {
+    oilData = doc.exists ? doc.data() : {};
+    renderOilCards();
+});
+
     
     // Initialize oil data if empty
     oils.forEach(oil => {
@@ -33,8 +40,9 @@ let oilData = JSON.parse(localStorage.getItem('oilData')) || {};
     });
 
     // Save initial data
-    localStorage.setItem('supplies', JSON.stringify(supplies));
-    localStorage.setItem('oilData', JSON.stringify(oilData));
+    db.collection("app").doc("oils").set(oilData);
+    db.collection("app").doc("supplies").set(supplies);
+
 
     // Populate oil select dropdowns
     const oilSelect = document.getElementById('oil-select');
@@ -53,8 +61,7 @@ let oilData = JSON.parse(localStorage.getItem('oilData')) || {};
     });
 
     // Render oil cards
-    renderOilCards();
-    renderSupplies();
+  
 
     // Production form handler
     document.getElementById('add-production').addEventListener('click', function() {
@@ -77,8 +84,9 @@ let oilData = JSON.parse(localStorage.getItem('oilData')) || {};
         supplies.manuals -= count;
         
         // Save to localStorage
-        localStorage.setItem('oilData', JSON.stringify(oilData));
-        localStorage.setItem('supplies', JSON.stringify(supplies));
+        db.collection("app").doc("oils").set(oilData);
+db.collection("app").doc("supplies").set(supplies);
+
         
         // Update UI
         renderOilCards();
@@ -104,7 +112,7 @@ let oilData = JSON.parse(localStorage.getItem('oilData')) || {};
         if (!isNaN(labels)) oilData[selectedOil].labels = labels;
         if (!isNaN(oil)) oilData[selectedOil].oil = oil;
         
-        localStorage.setItem('oilData', JSON.stringify(oilData));
+        db.collection("app").doc("oils").set(oilData);
         renderOilCards();
     });
 
@@ -218,14 +226,12 @@ function updateSupplies(type) {
         return;
     }
     
-    let supplies = JSON.parse(localStorage.getItem('supplies')) || {
-        lids: 5000,
-        bottles: 5000,
-        manuals: 5000
-};
-    
+    db.collection("app").doc("supplies").get().then(doc => {
+    let supplies = doc.exists ? doc.data() : {};
     supplies[type] = value;
-    localStorage.setItem('supplies', JSON.stringify(supplies));
+    db.collection("app").doc("supplies").set(supplies);
+});
+
     
     // Update UI
     const suppliesContainer = document.querySelector('custom-supplies-card');
