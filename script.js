@@ -1,3 +1,5 @@
+console.log("script.js живой", typeof db);
+
 document.addEventListener('DOMContentLoaded', function () {
 
     const oils = [
