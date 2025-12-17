@@ -140,7 +140,12 @@
         feather.replace();
     </script>
 <script src="https://huggingface.co/deepsite/deepsite-badge.js"></script>
-    const firebaseConfig = {
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+
+  const firebaseConfig = {
   apiKey: "AIzaSyArBA1DUY-kksabrqDxQ5CYOSBcAVwEAqQ",
   authDomain: "my-first-project-dc4e5.firebaseapp.com",
   projectId: "my-first-project-dc4e5",
@@ -148,5 +153,39 @@
   messagingSenderId: "643846849382",
   appId: "1:643846849382:web:ca9ef5965e8816875afea7"
 };
+
+  // Инициализация
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Примеры функций:
+  
+  // СОХРАНИТЬ данные
+  async function saveData(data) {
+    try {
+      const docRef = await addDoc(collection(db, "items"), data);
+      console.log("Сохранено с ID:", docRef.id);
+    } catch (e) {
+      console.error("Ошибка добавления:", e);
+    }
+  }
+
+  // ПОЛУЧИТЬ данные
+  async function getAllData() {
+    const querySnapshot = await getDocs(collection(db, "items"));
+    querySnapshot.forEach((doc) => {
+      console.log(doc.id, "=>", doc.data());
+    });
+  }
+
+  // Пример использования:
+  document.getElementById("saveBtn")?.addEventListener("click", () => {
+    saveData({ text: document.getElementById("inputText").value });
+  });
+
+  document.getElementById("loadBtn")?.addEventListener("click", () => {
+    getAllData();
+  });
+</script>
 </body>
 </html>
