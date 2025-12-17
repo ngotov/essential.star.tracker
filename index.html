@@ -140,5 +140,25 @@
         feather.replace();
     </script>
 <script src="https://huggingface.co/deepsite/deepsite-badge.js"></script>
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyArBA1DUY-kksabrqDxQ5CYOSBcAVwEAqQ",
+    authDomain: "my-first-project-dc4e5.firebaseapp.com",
+    projectId: "my-first-project-dc4e5",
+    storageBucket: "my-first-project-dc4e5.firebasestorage.app",
+    messagingSenderId: "643846849382",
+    appId: "1:643846849382:web:ca9ef5965e8816875afea7"
+  };
+
+  // Инициализация Firebase
+  firebase.initializeApp(firebaseConfig);
+
+  // Firestore (глобально доступен)
+  const db = firebase.firestore();
+</script>
 </body>
 </html>
