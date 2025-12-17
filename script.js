@@ -89,8 +89,7 @@ db.collection("app").doc("supplies").set(supplies);
 
         
         // Update UI
-        renderOilCards();
-        renderSupplies();
+       
         
         // Reset form
         document.getElementById('production-count').value = '';
@@ -112,8 +111,9 @@ db.collection("app").doc("supplies").set(supplies);
         if (!isNaN(labels)) oilData[selectedOil].labels = labels;
         if (!isNaN(oil)) oilData[selectedOil].oil = oil;
         
-        db.collection("app").doc("oils").set(oilData);
-        renderOilCards();
+        db.collection("app").doc("oils").get().then(doc => {
+    oilData = doc.data();
+    renderOilCards();
     });
 
     // Edit oil select change handler
@@ -226,10 +226,9 @@ function updateSupplies(type) {
         return;
     }
     
-    db.collection("app").doc("supplies").get().then(doc => {
-    let supplies = doc.exists ? doc.data() : {};
-    supplies[type] = value;
-    db.collection("app").doc("supplies").set(supplies);
+  db.collection("app").doc("supplies").get().then(doc => {
+    supplies = doc.data();
+    renderSupplies();
 });
 
     
