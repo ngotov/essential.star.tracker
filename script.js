@@ -68,16 +68,26 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeEventListeners();
 });
 
+import {
+    getFirestore,
+    doc,
+    onSnapshot,
+    setDoc,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-function subscribeToInventory() {
-    onSnapshot(inventoryRef, (snap) => {
-        if (snap.exists()) {
-            inventoryData = snap.data();
-        } else {
-            inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
-            setDoc(inventoryRef, inventoryData);
+async function subscribeToInventory() {
+    const snap = await getDoc(inventoryRef);
+
+    if (!snap.exists()) {
+        await setDoc(inventoryRef, JSON.parse(JSON.stringify(INITIAL_DATA)));
+    }
+
+    onSnapshot(inventoryRef, (liveSnap) => {
+        if (liveSnap.exists()) {
+            inventoryData = liveSnap.data();
+            renderAll();
         }
-        renderAll();
     });
 }
 // Загрузка данных из localStorage
