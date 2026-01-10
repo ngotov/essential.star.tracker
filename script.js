@@ -173,51 +173,37 @@ function renderOilsTable() {
         return sortDescending ? b.ml - a.ml : a.ml - b.ml;
     });
 
-    tbody.innerHTML = oils.map(([name, data]) => {
-        const status = getStockStatus(data.ml, data.boxes, data.labels);
-        return `
-            <tr class="fade-in">
-                <td class="py-4 px-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-primary-100 rounded-lg mr-3">
-                            <i data-feather="droplet" class="text-primary-600 w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <div class="font-medium text-gray-800">${name}</div>
-                            <div class="text-sm text-gray-500">Эфирное масло</div>
-                        </div>
-                    </div>
-                </td>
-                <td class="py-4 px-6">
-                    <div class="font-semibold text-gray-800">${data.ml.toLocaleString()} мл</div>
-                    <div class="text-sm text-gray-500">${Math.floor(data.ml / 10)} единиц</div>
-                </td>
-                <td class="py-4 px-6">
-                    <div class="font-medium ${data.boxes < 100 ? 'text-red-600' : 'text-gray-800'}">
-                        ${data.boxes.toLocaleString()} шт
-                    </div>
-                </td>
-                <td class="py-4 px-6">
-                    <div class="font-medium ${data.labels < 100 ? 'text-red-600' : 'text-gray-800'}">
-                        ${data.labels.toLocaleString()} шт
-                    </div>
-                </td>
-                <td class="py-4 px-6">
-                    <span class="px-3 py-1 rounded-full text-xs font-medium ${status.class}">
-                        ${status.text}
-                    </span>
-                </td>
-                <td class="py-4 px-6">
-                    <button onclick="editOil('${name}')" class="text-primary-600 hover:text-primary-800 transition mr-3">
-                        <i data-feather="edit-2" class="w-4 h-4"></i>
-                    </button>
-                    <button onclick="showOilHistory('${name}')" class="text-gray-600 hover:text-gray-800 transition">
-                        <i data-feather="history" class="w-4 h-4"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
+   tbody.innerHTML = oils.map(([name, data]) => {
+    const status = getStockStatus(data.ml, data.boxes, data.labels);
+    return `
+        <tr>
+            <td data-label="Масло">
+                ${name}
+            </td>
+
+            <td data-label="Объём">
+                ${data.ml.toLocaleString()} мл
+            </td>
+
+            <td data-label="Коробки">
+                ${data.boxes.toLocaleString()}
+            </td>
+
+            <td data-label="Этикетки">
+                ${data.labels.toLocaleString()}
+            </td>
+
+            <td data-label="Статус">
+                ${status.text}
+            </td>
+
+            <td data-label="Действия">
+                <button onclick="editOil('${name}')">✏️</button>
+            </td>
+        </tr>
+    `;
+}).join('');
+
 
     feather.replace();
 }
