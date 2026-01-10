@@ -1,6 +1,15 @@
+<script type="module">
 // Основной скрипт для приложения Essential Star
 
 // Конфигурация Firebase (используем Realtime Database)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import {
+    getFirestore,
+    doc,
+    onSnapshot,
+    setDoc
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyArBA1DUY-kksabrqDxQ5CYOSBcAVwEAqQ",
     authDomain: "my-first-project-dc4e5.firebaseapp.com",
@@ -8,11 +17,15 @@ const firebaseConfig = {
     storageBucket: "my-first-project-dc4e5.firebasestorage.app",
     messagingSenderId: "643846849382",
     appId: "1:643846849382:web:ca9ef5965e8816875afea7"
-  };
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const inventoryRef = doc(db, "storage", "current");
 
 // Инициализация Firebase (в реальном проекте нужно заменить на реальные ключи)
 // Для демо используем localStorage
-const STORAGE_KEY = 'essential_star_inventory';
+
 const OILS_LIST = [
     'Аир', 'Анис', 'Апельсин', 'Базилик', 'Бензоин', 'Бергамот', 'Бэй', 'Ваниль',
     'Вербена', 'Ветивер', 'Гвоздика', 'Герань', 'Голубой лотос', 'Грейпфрут', 'Ель',
@@ -50,31 +63,28 @@ let inventoryData = null;
 let sortDescending = true;
 
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', function() {
-    loadInventoryData();
+document.addEventListener('DOMContentLoaded', function () {
+    subscribeToInventory();
     initializeEventListeners();
-    renderAll();
 });
 
-// Загрузка данных из localStorage
-function loadInventoryData() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        inventoryData = JSON.parse(saved);
-    } else {
-        inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
-        saveInventoryData();
-    }
+
+function subscribeToInventory() {
+    onSnapshot(inventoryRef, (snap) => {
+        if (snap.exists()) {
+            inventoryData = snap.data();
+        } else {
+            inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
+            setDoc(inventoryRef, inventoryData);
+        }
+        renderAll();
+    });
 }
+// Загрузка данных из localStorage
+
 
 // Сохранение данных в localStorage
-function saveInventoryData() {
-    inventoryData.lastUpdated = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(inventoryData));
-    
-    // Симуляция синхронизации с сервером
-    showNotification('Данные сохранены и синхронизированы', 'success');
-}
+
 
 // Инициализация обработчиков событий
 function initializeEventListeners() {
@@ -354,7 +364,7 @@ function submitProduction() {
     oilData.boxes -= quantity;
     oilData.labels -= quantity;
     
-    saveInventoryData();
+    saveInventoryToFirebase();;
     renderAll();
     
     showNotification(`Производство ${quantity} единиц масла "${oilName}" зафиксировано`, 'success');
@@ -377,7 +387,7 @@ function updateAllManually() {
         inventoryData.oils[oilName].labels = parseInt(document.getElementById('editOilLabels').value) || 0;
     }
     
-    saveInventoryData();
+    saveInventoryToFirebase();
     renderAll();
     showNotification('Остатки успешно обновлены', 'success');
 }
@@ -395,7 +405,7 @@ function applyToAllOils() {
         inventoryData.oils[oilName].ml = Math.max(0, inventoryData.oils[oilName].ml + addMl);
     }
     
-    saveInventoryData();
+    saveInventoryToFirebase();
     renderAll();
     showNotification(`Добавлено ${addMl} мл ко всем маслам`, 'success');
     document.getElementById('addToAllMl').value = '';
@@ -405,7 +415,7 @@ function applyToAllOils() {
 function resetAllData() {
     if (confirm('Вы уверены, что хотите сбросить все данные к начальным значениям?')) {
         inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
-        saveInventoryData();
+        saveInventoryToFirebase();
         renderAll();
         showNotification('Все данные сброшены к начальным значениям', 'success');
     }
@@ -425,6 +435,11 @@ function getStockStatus(ml, boxes, labels) {
     } else {
         return { class: 'status-good', text: 'Достаточно' };
     }
+}
+
+function saveInventoryToFirebase() {
+    inventoryData.lastUpdated = new Date().toISOString();
+    setDoc(inventoryRef, inventoryData);
 }
 
 // Показать уведомление
@@ -463,3 +478,4 @@ window.editOil = function(oilName) {
 window.showOilHistory = function(oilName) {
     showNotification(`История изменений для "${oilName}" будет доступна в расширенной версии`, 'info');
 };
+</script>
