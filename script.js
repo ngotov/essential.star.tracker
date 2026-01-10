@@ -1,80 +1,82 @@
-// Основной скрипт для приложения Essential Star
+// ===============================
+// Essential Star — основной скрипт
+// ===============================
 
-// Конфигурация Firebase (используем Realtime Database)
-const firebaseConfig = {
-    apiKey: "AIzaSyArBA1DUY-kksabrqDxQ5CYOSBcAVwEAqQ",
-    authDomain: "my-first-project-dc4e5.firebaseapp.com",
-    projectId: "my-first-project-dc4e5",
-    storageBucket: "my-first-project-dc4e5.firebasestorage.app",
-    messagingSenderId: "643846849382",
-    appId: "1:643846849382:web:ca9ef5965e8816875afea7"
-  };
+// ===== Firebase Realtime Database INIT =====
+firebase.initializeApp({
+  apiKey: "AIzaSyArBA1DUY-kksabrqDxQ5CYOSBcAVwEAqQ",
+  authDomain: "my-first-project-dc4e5.firebaseapp.com",
+  databaseURL: "https://my-first-project-dc4e5-default-rtdb.firebaseio.com",
+  projectId: "my-first-project-dc4e5",
+  appId: "1:643846849382:web:ca9ef5965e8816875afea7"
+});
 
-// Инициализация Firebase (в реальном проекте нужно заменить на реальные ключи)
-// Для демо используем localStorage
-const STORAGE_KEY = 'essential_star_inventory';
+const db = firebase.database();
+const inventoryRef = db.ref("inventory");
+
+// ===== ДАННЫЕ =====
 const OILS_LIST = [
-    'Аир', 'Анис', 'Апельсин', 'Базилик', 'Бензоин', 'Бергамот', 'Бэй', 'Ваниль',
-    'Вербена', 'Ветивер', 'Гвоздика', 'Герань', 'Голубой лотос', 'Грейпфрут', 'Ель',
-    'Жасмин', 'Женьшень', 'Зелёный чай', 'Имбирь', 'Иланг-иланг', 'Иссоп', 'Какао',
-    'Камфора', 'Каннабис', 'Кардамон', 'Каяпут', 'Кедр', 'Кинза', 'Кипарис', 'Кориандр',
-    'Корица', 'Кофе', 'Куркума', 'Лаванда', 'Лавр', 'Ладан', 'Лайм', 'Лемонграсс',
-    'Лилия', 'Лимон', 'Магнолия', 'Майоран', 'Мандарин', 'Мелисса', 'Мирра', 'Можжевельник',
-    'Морковь', 'Мускатный орех', 'Мята', 'Нарцисс', 'Нероли', 'Орегано', 'Пальмароза',
-    'Пачули', 'Петегрейн', 'Петрушка', 'Пижма', 'Пион', 'Пихта', 'Полынь', 'Помело',
-    'Роза', 'Ромашка', 'Розмарин', 'Сандал', 'Сельдерей', 'Сосна', 'Стиракс', 'Табак',
-    'Тимьян', 'Тмин', 'Укроп', 'Фенхель', 'Фрезия', 'Чайное дерево', 'Чеснок',
-    'Чёрный перец', 'Шафран', 'Шалфей мускатный', 'Эвкалипт'
+  'Аир','Анис','Апельсин','Базилик','Бензоин','Бергамот','Бэй','Ваниль','Вербена','Ветивер',
+  'Гвоздика','Герань','Голубой лотос','Грейпфрут','Ель','Жасмин','Женьшень','Зелёный чай',
+  'Имбирь','Иланг-иланг','Иссоп','Какао','Камфора','Каннабис','Кардамон','Каяпут','Кедр',
+  'Кинза','Кипарис','Кориандр','Корица','Кофе','Куркума','Лаванда','Лавр','Ладан','Лайм',
+  'Лемонграсс','Лилия','Лимон','Магнолия','Майоран','Мандарин','Мелисса','Мирра',
+  'Можжевельник','Морковь','Мускатный орех','Мята','Нарцисс','Нероли','Орегано',
+  'Пальмароза','Пачули','Петегрейн','Петрушка','Пижма','Пион','Пихта','Полынь','Помело',
+  'Роза','Ромашка','Розмарин','Сандал','Сельдерей','Сосна','Стиракс','Табак','Тимьян',
+  'Тмин','Укроп','Фенхель','Фрезия','Чайное дерево','Чеснок','Чёрный перец','Шафран',
+  'Шалфей мускатный','Эвкалипт'
 ];
 
-// Начальные данные
 const INITIAL_DATA = {
-    universal: {
-        caps: 10000,
-        bottles: 10000,
-        instructions: 10000
-    },
-    oils: OILS_LIST.reduce((acc, oil) => {
-        acc[oil] = {
-            ml: 5000,
-            boxes: 500,
-            labels: 500
-        };
-        return acc;
-    }, {}),
-    lastUpdated: new Date().toISOString()
+  universal: { caps: 10000, bottles: 10000, instructions: 10000 },
+  oils: OILS_LIST.reduce((acc, oil) => {
+    acc[oil] = { ml: 5000, boxes: 500, labels: 500 };
+    return acc;
+  }, {}),
+  lastUpdated: new Date().toISOString()
 };
 
-// Глобальное состояние
+// ===== СОСТОЯНИЕ =====
 let inventoryData = null;
 let sortDescending = true;
 
-// Инициализация приложения
-document.addEventListener('DOMContentLoaded', function() {
-    loadInventoryData();
-    initializeEventListeners();
-    renderAll();
+// ===== ИНИЦИАЛИЗАЦИЯ =====
+document.addEventListener('DOMContentLoaded', () => {
+  loadInventoryData();
+  initializeEventListeners();
 });
 
-// Загрузка данных из localStorage
+// ===== ЗАГРУЗКА / СИНХРОНИЗАЦИЯ =====
 function loadInventoryData() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        inventoryData = JSON.parse(saved);
+  inventoryRef.on("value", snapshot => {
+    if (!snapshot.exists()) {
+      inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
+      inventoryRef.set(inventoryData);
     } else {
-        inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
-        saveInventoryData();
+      inventoryData = snapshot.val();
     }
+    renderAll();
+  });
 }
 
-// Сохранение данных в localStorage
+// ===== СОХРАНЕНИЕ =====
 function saveInventoryData() {
-    inventoryData.lastUpdated = new Date().toISOString();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(inventoryData));
-    
-    // Симуляция синхронизации с сервером
-    showNotification('Данные сохранены и синхронизированы', 'success');
+  inventoryData.lastUpdated = new Date().toISOString();
+  inventoryRef.set(inventoryData);
+  showNotification('Данные сохранены и синхронизированы', 'success');
 }
+
+/* =======================
+   НИЖЕ КОД БЕЗ ИЗМЕНЕНИЙ
+   (логика, UI, функции)
+   ======================= */
+
+// ⬇️⬇️⬇️
+// ВЕСЬ ОСТАЛЬНОЙ ТВОЙ КОД
+// ОСТАВЛЯЕТСЯ 1 В 1
+// ⬆️⬆️⬆️
+
 
 // Инициализация обработчиков событий
 function initializeEventListeners() {
