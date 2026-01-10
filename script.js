@@ -4,11 +4,12 @@
 
 // ===== Firebase Realtime Database INIT =====
 firebase.initializeApp({
-  apiKey: "AIzaSyArBA1DUY-kksabrqDxQ5CYOSBcAVwEAqQ",
-  authDomain: "my-first-project-dc4e5.firebaseapp.com",
-  databaseURL: "https://my-first-project-dc4e5-default-rtdb.firebaseio.com",
-  projectId: "my-first-project-dc4e5",
-  appId: "1:643846849382:web:ca9ef5965e8816875afea7"
+  apiKey: "AIzaSyD_hUKXdMOB-vEoGwpdxRvL-Q0inphtSU4",
+    authDomain: "last-dance-5915a.firebaseapp.com",
+    projectId: "last-dance-5915a",
+    storageBucket: "last-dance-5915a.firebasestorage.app",
+    messagingSenderId: "883390850",
+    appId: "1:883390850:web:60e49511ee7f8451c8f79b"
 });
 
 const db = firebase.database();
