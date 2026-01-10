@@ -4,7 +4,7 @@ class CustomFooter extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <style>
                 .footer {
-                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
                 }
                 
                 .footer-link {
