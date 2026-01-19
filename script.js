@@ -119,28 +119,28 @@ const OIL_EMOJIS = {
 // указан соответствующий PNG‑файл из каталога oil_icons. Если масло не найдено в OIL_EMOJIS,
 // будет использован файл по умолчанию (1f9b4.png — бутылочка).
 const OIL_ICON_FILES = {
-  '🍊': '1f34a.png', // апельсин, мандарин, грейпфрут, бергамот
-  '🍋': '1f34b.png', // лимон, лайм
-  '💜': '1f49c.png', // лаванда (фиолетовое сердце)
-  '🌹': '1f339.png', // роза
-  '🌿': '1f33f.png', // травы (мята, эвкалипт, базилик и др.)
-  '⭐': '2b50.png', // звезда (анис)
-  '🍦': '1f366.png', // ваниль (мороженое)
-  '🌺': '1f33a.png', // гвоздика (цветок)
-  '🫚': '1fad9.png', // имбирь
-  '🍫': '1f36b.png', // какао (шоколад)
-  '🍂': '1f342.png', // корица (лист)
-  '☕': '2615.png', // кофе
-  '🥜': '1f95c.png', // мускатный орех (арахис)
-  '🌼': '1f33c.png', // шафран, жасмин (цветок)
-  '🪵': '1fa93.png', // древесные масла (бензоин, мирра, сандал, стиракс и др.)
-  '🌲': '1f332.png', // хвойные (кедр, ель, сосна, пихта)
-  '🚬': '1f6ac.png', // табак
-  '🌸': '1f338.png', // цветочные (фрезия, герань)
-  '🍵': '1f375.png', // чай (чайное дерево)
-  '🧄': '1f9c4.png', // чеснок
-  '🌶': '1f336.png', // чёрный перец (перчик)
-  '🧴': '1f9b4.png'  // по умолчанию — бутылочка
+  '🍊': '1f34a.png',
+  '🍋': '1f34b.png',
+  '💜': '1f49c.png',
+  '🌹': '1f339.png',
+  '🌿': '1f33f.png',
+  '⭐': '2b50.png',
+  '🍦': '1f366.png',
+  '🌺': '1f33a.png',
+  '🫚': '1fad9.png',
+  '🍫': '1f36b.png',
+  '🍂': '1f342.png',
+  '☕': '2615.png',
+  '🥜': '1f95c.png',
+  '🌼': '1f33c.png',
+  '🪵': '1fa93.png',
+  '🌲': '1f332.png',
+  '🚬': '1f6ac.png',
+  '🌸': '1f338.png',
+  '🍵': '1f375.png',
+  '🧄': '1f9c4.png',
+  '🌶': '1f336.png',
+  '🧴': '1f9b4.png'  // по умолчанию
 };
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -152,16 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Настройка кнопки возврата вверх
   const scrollBtn = document.getElementById('scrollToTopBtn');
   if (scrollBtn) {
-    // Показать или скрыть кнопку в зависимости от прокрутки
     window.addEventListener('scroll', () => {
-      // Отображаем кнопку только когда прокрутка больше 400px
       if (window.pageYOffset > 400) {
         scrollBtn.classList.add('show');
       } else {
         scrollBtn.classList.remove('show');
       }
     });
-    // Прокрутка вверх при клике
     scrollBtn.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -171,13 +168,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // Настройка темы: применить сохранённое значение и привязать обработчик к кнопке
 function setupTheme() {
   const savedTheme = localStorage.getItem('theme');
-  const isDarkPreferred = savedTheme === 'dark' || (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const isDarkPreferred = savedTheme === 'dark' ||
+    (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.body.classList.toggle('dark', isDarkPreferred);
   const themeToggleInput = document.getElementById('themeToggle');
   if (themeToggleInput) {
-    // установить положение переключателя согласно текущей теме
     themeToggleInput.checked = isDarkPreferred;
-    // слушать изменение состояния
     themeToggleInput.addEventListener('change', () => {
       const newDark = themeToggleInput.checked;
       document.body.classList.toggle('dark', newDark);
@@ -186,13 +182,9 @@ function setupTheme() {
   }
 }
 
-function updateThemeToggleIcon() {
-  // функция больше не используется, так как переключатель темы реализован через ползунок
-}
-
 // ===== ЗАГРУЗКА / СИНХРОНИЗАЦИЯ =====
 function loadInventoryData() {
-  inventoryRef.on("value", snapshot => {
+  inventoryRef.on('value', snapshot => {
     if (!snapshot.exists()) {
       inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
       inventoryRef.set(inventoryData);
@@ -216,12 +208,11 @@ function initializeEventListeners() {
   document.getElementById('searchInput').addEventListener('input', () => {
     renderOilsTable();
   });
-  // Настройка сортировки по столбцам
+  // Сортировка
   document.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', () => {
       const field = th.getAttribute('data-sort');
       if (currentSortField === field) {
-        // поменять направление сортировки
         sortDescending = !sortDescending;
       } else {
         currentSortField = field;
@@ -231,11 +222,11 @@ function initializeEventListeners() {
       renderOilsTable();
     });
   });
-  // Обработчики производства
+  // Производство
   document.getElementById('productionOilSelect').addEventListener('change', updateProductionPreview);
   document.getElementById('productionQuantity').addEventListener('input', updateProductionPreview);
   document.getElementById('submitProduction').addEventListener('click', submitProduction);
-  // Ручное редактирование
+  // Ручное редактирование: обновление полей при выборе масла
   document.getElementById('editOilSelect').addEventListener('change', () => {
     const oil = document.getElementById('editOilSelect').value;
     if (oil && inventoryData.oils[oil]) {
@@ -244,7 +235,7 @@ function initializeEventListeners() {
       document.getElementById('editOilLabels').value = inventoryData.oils[oil].labels;
     }
   });
-  // Новые кнопки редактирования и массового обновления
+  // Кнопки редактирования
   const universalBtn = document.getElementById('applyUniversal');
   if (universalBtn) universalBtn.addEventListener('click', applyUniversalEdit);
   const oilBtn = document.getElementById('applyOilEdit');
@@ -255,32 +246,38 @@ function initializeEventListeners() {
   const resetBtn = document.getElementById('resetAll');
   if (resetBtn) resetBtn.addEventListener('click', resetAllData);
 
+  // Авторизация доступа к редактированию
+  const editPasswordBtn = document.getElementById('editPasswordButton');
+  const editPasswordInput = document.getElementById('editPasswordInput');
+  if (editPasswordBtn && editPasswordInput) {
+    editPasswordBtn.addEventListener('click', checkEditPassword);
+    editPasswordInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') {
+        checkEditPassword();
+      }
+    });
+  }
+
   // Сворачиваемый список масел
   const oilsToggle = document.getElementById('oilsToggle');
   const oilsCollapse = document.getElementById('oilsCollapse');
   const oilsArrow = document.getElementById('oilsArrow');
   if (oilsToggle && oilsCollapse && oilsArrow) {
-    // Функция для применения состояния сворачивания/разворачивания
     function setOilsCollapsed(collapsed) {
       oilsCollapsedState = collapsed;
       if (collapsed) {
-        // скрыть содержимое, повернуть стрелку
         oilsCollapse.style.maxHeight = '0px';
         oilsArrow.style.transform = 'rotate(-90deg)';
       } else {
-        // установить высоту, соответствующую содержимому
         oilsCollapse.style.maxHeight = oilsCollapse.scrollHeight + 'px';
         oilsArrow.style.transform = 'rotate(0deg)';
       }
     }
-    // Устанавливаем начальное состояние: свернуть на маленьких экранах (<768px), иначе развернуть
     oilsCollapsedState = window.innerWidth < 768;
     setOilsCollapsed(oilsCollapsedState);
-    // При клике переключаем состояние
     oilsToggle.addEventListener('click', () => {
       setOilsCollapsed(!oilsCollapsedState);
     });
-    // При изменении размера окна: если список раскрыт, обновить maxHeight под новую высоту
     window.addEventListener('resize', () => {
       if (!oilsCollapsedState) {
         oilsCollapse.style.maxHeight = oilsCollapse.scrollHeight + 'px';
@@ -289,7 +286,7 @@ function initializeEventListeners() {
   }
 }
 
-// ===== РЕНДЕР ВСЕХ КОМПОНЕНТОВ =====
+// ===== РЕНДЕР =====
 function renderAll() {
   renderUniversalSupplies();
   renderStatistics();
@@ -299,11 +296,10 @@ function renderAll() {
   updateProductionPreview();
 }
 
-// Рендер универсальных расходников
+// Универсальные расходники
 function renderUniversalSupplies() {
   const container = document.getElementById('universalSupplies');
   const { caps, bottles, instructions } = inventoryData.universal;
-  // Максимальное значение для шкалы расходников — 5000 единиц
   const supplies = [
     { type: 'caps', name: 'Крышки', value: caps, max: 5000 },
     { type: 'bottles', name: 'Флакончики', value: bottles, max: 5000 },
@@ -328,7 +324,7 @@ function renderUniversalSupplies() {
   }).join('');
 }
 
-// Рендер таблицы масел
+// Таблица масел
 function renderOilsTable() {
   const tbody = document.getElementById('oilsTableBody');
   const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -336,7 +332,6 @@ function renderOilsTable() {
   if (searchTerm) {
     oils = oils.filter(([name]) => name.toLowerCase().includes(searchTerm));
   }
-  // Сортировка по выбранному полю
   oils.sort((aEntry, bEntry) => {
     const [nameA, a] = aEntry;
     const [nameB, b] = bEntry;
@@ -360,8 +355,6 @@ function renderOilsTable() {
   });
   tbody.innerHTML = oils.map(([name, data]) => {
     const status = getStockStatus(data.ml, data.boxes, data.labels);
-    // Определяем эмодзи и соответствующий файл иконки. Если масло не найдено в OIL_EMOJIS,
-    // используем эмодзи бутылочки и файл по умолчанию.
     const emoji = OIL_EMOJIS[name] || '🧴';
     const iconFile = OIL_ICON_FILES[emoji] || '1f9b4.png';
     return `
@@ -375,34 +368,23 @@ function renderOilsTable() {
       </tr>
     `;
   }).join('');
-
-  // Если список масел раскрыт, обновить высоту контейнера, чтобы учесть изменение содержимого
   const oilsCollapse = document.getElementById('oilsCollapse');
   if (oilsCollapse && typeof oilsCollapsedState !== 'undefined' && !oilsCollapsedState) {
     oilsCollapse.style.maxHeight = oilsCollapse.scrollHeight + 'px';
   }
 }
 
-// Рендер статистики
+// Статистика
 function renderStatistics() {
   const oils = Object.values(inventoryData.oils);
   const totalMl = oils.reduce((sum, oil) => sum + oil.ml, 0);
-  // Подсчёт масел с низким и средним запасом. Пороговые значения определяются в getStockStatus().
-  const lowStock = oils.filter(oil => {
-    const status = getStockStatus(oil.ml, oil.boxes, oil.labels);
-    return status.class === 'status-low';
-  }).length;
-  const mediumStock = oils.filter(oil => {
-    const status = getStockStatus(oil.ml, oil.boxes, oil.labels);
-    return status.class === 'status-medium';
-  }).length;
-  // Подсчёт масел с очень малым количеством коробок и этикеток
+  const lowStock = oils.filter(oil => getStockStatus(oil.ml, oil.boxes, oil.labels).class === 'status-low').length;
+  const mediumStock = oils.filter(oil => getStockStatus(oil.ml, oil.boxes, oil.labels).class === 'status-medium').length;
   const fewBoxes = oils.filter(oil => oil.boxes < 20).length;
   const fewLabels = oils.filter(oil => oil.labels < 100).length;
   document.getElementById('totalOilsCount').textContent = OILS_LIST.length;
   document.getElementById('totalOilMl').textContent = totalMl.toLocaleString() + ' мл';
   document.getElementById('lowStockCount').textContent = lowStock;
-  // Обновляем новые элементы статистики
   const mediumElem = document.getElementById('mediumStockCount');
   if (mediumElem) mediumElem.textContent = mediumStock;
   const fewBoxesElem = document.getElementById('fewBoxesCount');
@@ -411,7 +393,7 @@ function renderStatistics() {
   if (fewLabelsElem) fewLabelsElem.textContent = fewLabels;
 }
 
-// Заполнение селекторов
+// Селекты
 function populateSelects() {
   const productionSelect = document.getElementById('productionOilSelect');
   const editSelect = document.getElementById('editOilSelect');
@@ -420,20 +402,18 @@ function populateSelects() {
   if (productionSelect) productionSelect.innerHTML = optionsHtml;
   if (editSelect) editSelect.innerHTML = optionsHtml;
   if (batchSelect) batchSelect.innerHTML = optionsHtml;
-  // Установить значения редактируемого масла (первый элемент по умолчанию)
   const firstOil = OILS_LIST[0];
   if (firstOil && inventoryData.oils[firstOil]) {
     document.getElementById('editOilMl').value = inventoryData.oils[firstOil].ml;
     document.getElementById('editOilBoxes').value = inventoryData.oils[firstOil].boxes;
     document.getElementById('editOilLabels').value = inventoryData.oils[firstOil].labels;
   }
-  // Заполнить универсальные расходники
   document.getElementById('editCaps').value = inventoryData.universal.caps;
   document.getElementById('editBottles').value = inventoryData.universal.bottles;
   document.getElementById('editInstructions').value = inventoryData.universal.instructions;
 }
 
-// Обновление предпросмотра производства
+// Предпросмотр производства
 function updateProductionPreview() {
   const oilName = document.getElementById('productionOilSelect').value;
   const quantity = parseInt(document.getElementById('productionQuantity').value) || 0;
@@ -445,7 +425,6 @@ function updateProductionPreview() {
   const oilData = inventoryData.oils[oilName];
   if (!oilData) return;
   const requiredMl = quantity * 10;
-  // Рассчитываем максимальное количество единиц, которое можно произвести исходя из доступных ресурсов.
   const maxUnitsByResources = Math.min(
     inventoryData.universal.caps,
     inventoryData.universal.bottles,
@@ -472,7 +451,7 @@ function updateProductionPreview() {
   preview.classList.remove('hidden');
 }
 
-// Отправка данных о производстве
+// Производство
 function submitProduction() {
   const oilName = document.getElementById('productionOilSelect').value;
   const quantity = parseInt(document.getElementById('productionQuantity').value) || 0;
@@ -483,7 +462,6 @@ function submitProduction() {
   const oilData = inventoryData.oils[oilName];
   if (!oilData) return;
   const requiredMl = quantity * 10;
-  // Проверка достаточности материалов
   if (inventoryData.universal.caps < quantity) {
     showNotification(`Недостаточно крышек. Нужно: ${quantity}, есть: ${inventoryData.universal.caps}`, 'error');
     return;
@@ -508,7 +486,6 @@ function submitProduction() {
     showNotification(`Недостаточно этикеток для ${oilName}. Нужно: ${quantity}, есть: ${oilData.labels}`, 'error');
     return;
   }
-  // Списание материалов
   inventoryData.universal.caps -= quantity;
   inventoryData.universal.bottles -= quantity;
   inventoryData.universal.instructions -= quantity;
@@ -522,72 +499,7 @@ function submitProduction() {
   updateProductionPreview();
 }
 
-// Ручное обновление всех остатков
-function updateAllManually() {
-  inventoryData.universal.caps = parseInt(document.getElementById('editCaps').value) || 0;
-  inventoryData.universal.bottles = parseInt(document.getElementById('editBottles').value) || 0;
-  inventoryData.universal.instructions = parseInt(document.getElementById('editInstructions').value) || 0;
-  const oilName = document.getElementById('editOilSelect').value;
-  if (oilName && inventoryData.oils[oilName]) {
-    inventoryData.oils[oilName].ml = parseInt(document.getElementById('editOilMl').value) || 0;
-    inventoryData.oils[oilName].boxes = parseInt(document.getElementById('editOilBoxes').value) || 0;
-    inventoryData.oils[oilName].labels = parseInt(document.getElementById('editOilLabels').value) || 0;
-  }
-  saveInventoryData();
-  renderAll();
-  showNotification('Остатки успешно обновлены', 'success');
-}
-
-// Применить значение ко всем маслам
-function applyToAllOils() {
-  const addMl = parseInt(document.getElementById('addToAllMl').value) || 0;
-  if (addMl === 0) {
-    showNotification('Введите значение для добавления', 'warning');
-    return;
-  }
-  for (const oilName in inventoryData.oils) {
-    inventoryData.oils[oilName].ml = Math.max(0, inventoryData.oils[oilName].ml + addMl);
-  }
-  saveInventoryData();
-  renderAll();
-  showNotification(`Добавлено ${addMl} мл ко всем маслам`, 'success');
-  document.getElementById('addToAllMl').value = '';
-}
-
-// Сброс всех данных
-function resetAllData() {
-  if (confirm('Вы уверены, что хотите сбросить все данные к начальным значениям?')) {
-    inventoryData = JSON.parse(JSON.stringify(INITIAL_DATA));
-    saveInventoryData();
-    renderAll();
-    showNotification('Все данные сброшены к начальным значениям', 'success');
-  }
-}
-
-// Обновить стрелки сортировки в заголовках таблицы
-function updateSortArrows() {
-  const headers = document.querySelectorAll('th[data-sort]');
-  headers.forEach(th => {
-    const field = th.getAttribute('data-sort');
-    th.classList.remove('sorted-desc', 'sorted-asc');
-    const arrow = th.querySelector('.sort-arrow');
-    if (!arrow) return;
-    // По умолчанию стрелка вниз
-    arrow.textContent = '▼';
-    if (field === currentSortField) {
-      if (sortDescending) {
-        th.classList.add('sorted-desc');
-        arrow.textContent = '▼';
-      } else {
-        th.classList.add('sorted-asc');
-        arrow.textContent = '▲';
-      }
-    }
-  });
-}
-
-// ===== Новые функции редактирования =====
-// Применение изменений универсальных расходников. Если поле пустое, значение не изменяется.
+// Изменение универсальных расходников: если поле пустое, значение не меняется
 function applyUniversalEdit() {
   let changed = false;
   const capsVal = document.getElementById('editCaps').value;
@@ -614,7 +526,7 @@ function applyUniversalEdit() {
   }
 }
 
-// Применение изменений для одного масла. Если поле пустое, значение не меняется.
+// Изменение одного масла: если поле пустое, значение не меняется
 function applySingleOilEdit() {
   const oilName = document.getElementById('editOilSelect').value;
   if (!oilName || !inventoryData.oils[oilName]) {
@@ -647,7 +559,7 @@ function applySingleOilEdit() {
   }
 }
 
-// Массовое редактирование масел. Устанавливает новое значение мл для выбранных масел.
+// Массовое изменение: устанавливает новое значение мл для выбранных масел
 function applyBatchOilEdit() {
   const selectElem = document.getElementById('batchOilSelect');
   const selectedOptions = Array.from(selectElem ? selectElem.selectedOptions : []).map(opt => opt.value);
@@ -666,10 +578,7 @@ function applyBatchOilEdit() {
       inventoryData.oils[name].ml = newMl;
     }
   });
-  // очистить поле ввода
   document.getElementById('batchOilMl').value = '';
-  // сбросить выбор (опционально)
-  // selectElem.selectedIndex = -1;
   saveInventoryData();
   renderAll();
   showNotification(`Обновлены ${selectedOptions.length} масел`, 'success');
@@ -686,39 +595,61 @@ function getStockStatus(ml, boxes, labels) {
   }
 }
 
-// Показывать уведомления
+// Уведомления
 function showNotification(message, type = 'info') {
-  const icons = {
-    success: '✔️',
-    error: '❌',
-    warning: '⚠️',
-    info: 'ℹ️'
-  };
+  const icons = { success: '✔️', error: '❌', warning: '⚠️', info: 'ℹ️' };
   const colors = {
-    success: { bg: getComputedStyle(document.documentElement).getPropertyValue('--status-good-bg'), text: getComputedStyle(document.documentElement).getPropertyValue('--status-good-text') },
-    error: { bg: getComputedStyle(document.documentElement).getPropertyValue('--status-low-bg'), text: getComputedStyle(document.documentElement).getPropertyValue('--status-low-text') },
-    warning: { bg: getComputedStyle(document.documentElement).getPropertyValue('--status-med-bg'), text: getComputedStyle(document.documentElement).getPropertyValue('--status-med-text') },
-    info: { bg: getComputedStyle(document.documentElement).getPropertyValue('--accent-color'), text: '#ffffff' }
+    success: {
+      bg: getComputedStyle(document.documentElement).getPropertyValue('--status-good-bg'),
+      text: getComputedStyle(document.documentElement).getPropertyValue('--status-good-text')
+    },
+    error: {
+      bg: getComputedStyle(document.documentElement).getPropertyValue('--status-low-bg'),
+      text: getComputedStyle(document.documentElement).getPropertyValue('--status-low-text')
+    },
+    warning: {
+      bg: getComputedStyle(document.documentElement).getPropertyValue('--status-med-bg'),
+      text: getComputedStyle(document.documentElement).getPropertyValue('--status-med-text')
+    },
+    info: {
+      bg: getComputedStyle(document.documentElement).getPropertyValue('--accent-color'),
+      text: '#ffffff'
+    }
   };
   const notif = document.createElement('div');
   notif.className = 'notification';
   notif.style.background = colors[type].bg.trim();
   notif.style.color = colors[type].text.trim();
   notif.style.border = `1px solid ${colors[type].text.trim()}`;
-  notif.innerHTML = `
-    <span>${icons[type]}</span>
-    <span>${message}</span>
-  `;
+  notif.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
   document.body.appendChild(notif);
   setTimeout(() => {
     notif.remove();
   }, 3000);
 }
 
-// Функция для кнопки редактирования масла (глобальная)
+// Парольная защита блока редактирования
+function checkEditPassword() {
+  const input = document.getElementById('editPasswordInput');
+  const errorDiv = document.getElementById('editPasswordError');
+  if (!input) return;
+  const pwd = input.value;
+  if (pwd === '671124') {
+    const authCard = document.getElementById('editAuthCard');
+    const editSection = document.querySelector('.edit-section');
+    if (authCard) authCard.style.display = 'none';
+    if (editSection) editSection.style.display = '';
+    if (errorDiv) errorDiv.textContent = '';
+    input.value = '';
+    populateSelects();
+  } else {
+    if (errorDiv) errorDiv.textContent = 'Это для Никиты!';
+  }
+}
+
+// Выбор масла для редактирования — глобальная функция для кнопки ✏️
 window.editOil = function(oilName) {
   document.getElementById('editOilSelect').value = oilName;
   document.getElementById('editOilSelect').dispatchEvent(new Event('change'));
-  // Прокрутка к разделу редактирования для удобства
   document.getElementById('edit').scrollIntoView({ behavior: 'smooth' });
 };
