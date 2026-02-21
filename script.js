@@ -16,6 +16,9 @@ firebase.initializeApp({
 
 const db = firebase.database();
 const inventoryRef = db.ref("inventory");
+const HISTORY_RETENTION_DAYS = 90;
+const HISTORY_PASSWORD = '1510';
+
 
 // ===== ДАННЫЕ =====
 const OILS_LIST = [
@@ -194,6 +197,59 @@ function updateThemeToggleIcon() {
   // функция больше не используется, так как переключатель темы реализован через ползунок
 }
 
+function getHistoryCutoffIso() {
+  return new Date(Date.now() - HISTORY_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function pruneHistoryEntries(entries = []) {
+  const cutoff = Date.parse(getHistoryCutoffIso());
+  return entries.filter(entry => {
+    const ts = Date.parse(entry?.timestamp);
+    return Number.isFinite(ts) && ts >= cutoff;
+  });
+}
+
+function appendHistoryEntry(section, details) {
+  if (!inventoryData) return;
+  const nextEntry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    section,
+    details,
+    timestamp: new Date().toISOString()
+  };
+  const history = pruneHistoryEntries(Array.isArray(inventoryData.history) ? inventoryData.history : []);
+  history.push(nextEntry);
+  inventoryData.history = history;
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  const history = pruneHistoryEntries(Array.isArray(inventoryData?.history) ? inventoryData.history : []);
+  if (!history.length) {
+    list.innerHTML = '<div class="history-empty">Пока нет записей об изменениях.</div>';
+    return;
+  }
+  const sorted = history.slice().sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  list.innerHTML = sorted.map(entry => {
+    const date = new Date(entry.timestamp);
+    const dateText = Number.isFinite(date.getTime())
+      ? date.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'medium' })
+      : 'Неизвестная дата';
+    const sectionLabel = entry.section === 'production' ? 'Производство' : 'Редактирование остатков';
+    const sectionClass = entry.section === 'production' ? 'history-production' : 'history-edit';
+    return `
+      <div class="history-item ${sectionClass}">
+        <div class="history-item-head">
+          <span class="history-badge">${sectionLabel}</span>
+          <span class="history-time">${dateText}</span>
+        </div>
+        <div class="history-details">${entry.details}</div>
+      </div>
+    `;
+  }).join('');
+}
+
 // ===== ЗАГРУЗКА / СИНХРОНИЗАЦИЯ =====
 function loadInventoryData() {
   inventoryRef.on("value", snapshot => {
@@ -217,6 +273,7 @@ function normalizeInventoryData() {
   inventoryData.universal.instructions = Number.isFinite(inventoryData.universal.instructions) ? inventoryData.universal.instructions : 0;
   inventoryData.universal.packets = Number.isFinite(inventoryData.universal.packets) ? inventoryData.universal.packets : 5000;
   inventoryData.universal.bulkBoxes = Number.isFinite(inventoryData.universal.bulkBoxes) ? inventoryData.universal.bulkBoxes : 5000;
+  inventoryData.history = pruneHistoryEntries(Array.isArray(inventoryData.history) ? inventoryData.history : []);
 }
 
 // Сохранение данных и обновление времени
@@ -351,6 +408,32 @@ function initializeEventListeners() {
       }
     });
   }
+
+  const historyPwdBtn = document.getElementById('historyPasswordButton');
+  const historyPwdInput = document.getElementById('historyPasswordInput');
+  if (historyPwdBtn && historyPwdInput) {
+    historyPwdBtn.addEventListener('click', checkHistoryPassword);
+    historyPwdInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') {
+        checkHistoryPassword();
+      }
+    });
+  }
+
+  const mobileOpenBtn = document.getElementById('mobileProductionOpenBtn');
+  const mobileCloseBtn = document.getElementById('mobileProductionCloseBtn');
+  if (mobileOpenBtn) {
+    mobileOpenBtn.addEventListener('click', () => toggleMobileProductionPopup(true));
+  }
+  if (mobileCloseBtn) {
+    mobileCloseBtn.addEventListener('click', () => toggleMobileProductionPopup(false));
+  }
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      toggleMobileProductionPopup(false);
+    }
+  });
 }
 
 // ===== РЕНДЕР ВСЕХ КОМПОНЕНТОВ =====
@@ -361,6 +444,7 @@ function renderAll() {
   renderOilsTable();
   updateSortArrows();
   updateProductionPreview();
+  renderHistory();
 }
 
 // Рендер универсальных расходников
@@ -599,6 +683,7 @@ function submitProduction() {
   oilData.ml -= requiredMl;
   oilData.boxes -= quantity;
   oilData.labels -= quantity;
+  appendHistoryEntry('production', `Списано для ${oilName}: ${quantity} шт продукции (масло ${requiredMl} мл, коробы ${requiredBulkBoxes} шт).`);
   saveInventoryData();
   renderAll();
   showNotification(`Производство ${quantity} ед. масла "${oilName}" зафиксировано`, 'success');
@@ -712,6 +797,7 @@ function applyUniversalEdit() {
     changed = true;
   }
   if (changed) {
+    appendHistoryEntry('edit', 'Обновлены универсальные расходники.');
     saveInventoryData();
     renderAll();
     showNotification('Универсальные расходники обновлены', 'success');
@@ -745,6 +831,7 @@ function applySingleOilEdit() {
     changed = true;
   }
   if (changed) {
+    appendHistoryEntry('edit', `Изменены остатки масла "${oilName}".`);
     saveInventoryData();
     renderAll();
     showNotification(`Данные масла "${oilName}" обновлены`, 'success');
@@ -776,6 +863,7 @@ function applyBatchOilEdit() {
   document.getElementById('batchOilMl').value = '';
   // сбросить выбор (опционально)
   // selectElem.selectedIndex = -1;
+  appendHistoryEntry('edit', `Массовое изменение для ${selectedOptions.length} масел: новое значение ${newMl} мл.`);
   saveInventoryData();
   renderAll();
   showNotification(`Обновлены ${selectedOptions.length} масел`, 'success');
@@ -868,6 +956,41 @@ function checkProductionPassword() {
   } else {
     // Неверный пароль
     if (errorDiv) errorDiv.textContent = 'Это для Тани!';
+  }
+}
+
+function checkHistoryPassword() {
+  const input = document.getElementById('historyPasswordInput');
+  const errorDiv = document.getElementById('historyPasswordError');
+  if (!input) return;
+  if (input.value === HISTORY_PASSWORD) {
+    const authCard = document.getElementById('historyAuthCard');
+    const section = document.getElementById('historySection');
+    if (authCard) authCard.style.display = 'none';
+    if (section) section.style.display = '';
+    if (errorDiv) errorDiv.textContent = '';
+    input.value = '';
+    renderHistory();
+  } else if (errorDiv) {
+    errorDiv.textContent = 'Неверный пароль';
+  }
+}
+
+function toggleMobileProductionPopup(show) {
+  const overlay = document.getElementById('mobileProductionOverlay');
+  const panel = document.getElementById('productionPanel');
+  if (!overlay || !panel || window.innerWidth > 768) return;
+  if (show) {
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.appendChild(panel);
+  } else {
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden', 'true');
+    const grid = document.querySelector('#statistics .cards-grid');
+    if (grid) {
+      grid.appendChild(panel);
+    }
   }
 }
 
