@@ -53,6 +53,7 @@ let currentSortField = 'ml';
 let sortDescending = true;
 // Состояние сворачивания списка масел
 let oilsCollapsedState = null;
+let selectedProductionOil = null;
 
 // ===== СЛУЖЕБНЫЕ ДАННЫЕ =====
 // Иконки для универсальных расходников (используются эмодзи)
@@ -305,7 +306,10 @@ function initializeEventListeners() {
     });
   });
   // Обработчики производства
-  document.getElementById('productionOilSelect').addEventListener('change', updateProductionPreview);
+  document.getElementById('productionOilSelect').addEventListener('input', () => {
+    selectedProductionOil = document.getElementById('productionOilSelect').value.trim();
+    updateProductionPreview();
+  });
   document.getElementById('productionQuantity').addEventListener('input', updateProductionPreview);
   document.getElementById('submitProduction').addEventListener('click', submitProduction);
   // Ручное редактирование
@@ -563,13 +567,24 @@ function renderStatistics() {
 
 // Заполнение селекторов
 function populateSelects() {
-  const productionSelect = document.getElementById('productionOilSelect');
+  const productionInput = document.getElementById('productionOilSelect');
+  const productionOptions = document.getElementById('productionOilOptions');
   const editSelect = document.getElementById('editOilSelect');
   const batchSelect = document.getElementById('batchOilSelect');
   const optionsHtml = OILS_LIST.map(oil => `<option value="${oil}">${oil}</option>`).join('');
-  if (productionSelect) productionSelect.innerHTML = optionsHtml;
+  if (productionOptions) productionOptions.innerHTML = optionsHtml;
   if (editSelect) editSelect.innerHTML = optionsHtml;
   if (batchSelect) batchSelect.innerHTML = optionsHtml;
+
+  if (productionInput) {
+    if (selectedProductionOil && inventoryData.oils[selectedProductionOil]) {
+      productionInput.value = selectedProductionOil;
+    } else if (!productionInput.value && OILS_LIST.length) {
+      productionInput.value = OILS_LIST[0];
+      selectedProductionOil = OILS_LIST[0];
+    }
+  }
+
   // Установить значения редактируемого масла (первый элемент по умолчанию)
   const firstOil = OILS_LIST[0];
   if (firstOil && inventoryData.oils[firstOil]) {
@@ -585,9 +600,19 @@ function populateSelects() {
   document.getElementById('editBulkBoxes').value = inventoryData.universal.bulkBoxes;
 }
 
+function getSelectedProductionOil() {
+  const oilName = document.getElementById('productionOilSelect').value.trim();
+  if (inventoryData.oils[oilName]) {
+    selectedProductionOil = oilName;
+    return oilName;
+  }
+  return '';
+}
+
 // Обновление предпросмотра производства
 function updateProductionPreview() {
-  const oilName = document.getElementById('productionOilSelect').value;
+
+  const oilName = getSelectedProductionOil();
   const quantity = parseInt(document.getElementById('productionQuantity').value) || 0;
   const preview = document.getElementById('productionPreview');
   if (!oilName || quantity <= 0) {
@@ -631,10 +656,10 @@ function updateProductionPreview() {
 
 // Отправка данных о производстве
 function submitProduction() {
-  const oilName = document.getElementById('productionOilSelect').value;
+  const oilName = getSelectedProductionOil();
   const quantity = parseInt(document.getElementById('productionQuantity').value) || 0;
   if (!oilName || quantity <= 0) {
-    showNotification('Введите корректное количество', 'error');
+    showNotification(!oilName ? 'Выберите масло из списка' : 'Введите корректное количество', 'error');
     return;
   }
   const oilData = inventoryData.oils[oilName];
@@ -683,7 +708,7 @@ function submitProduction() {
   oilData.ml -= requiredMl;
   oilData.boxes -= quantity;
   oilData.labels -= quantity;
-  appendHistoryEntry('production', `Списано для ${oilName}: ${quantity} шт продукции (масло ${requiredMl} мл, коробы ${requiredBulkBoxes} шт).`);
+  appendHistoryEntry('production', `Произведено: ${quantity} шт масла "${oilName}". Списано: масло ${oilName} -${requiredMl} мл, коробки ${oilName} -${quantity} шт, этикетки ${oilName} -${quantity} шт, крышки -${quantity} шт, флакончики -${quantity} шт, инструкции -${quantity} шт, пакетики -${quantity} шт, коробы -${requiredBulkBoxes} шт.`);
   saveInventoryData();
   renderAll();
   showNotification(`Производство ${quantity} ед. масла "${oilName}" зафиксировано`, 'success');
@@ -771,33 +796,61 @@ function updateSortButton() {
 // Применение изменений универсальных расходников. Если поле пустое, значение не изменяется.
 function applyUniversalEdit() {
   let changed = false;
+  const changes = [];
   const capsVal = document.getElementById('editCaps').value;
   const bottlesVal = document.getElementById('editBottles').value;
   const instrVal = document.getElementById('editInstructions').value;
   const packetsVal = document.getElementById('editPackets').value;
   const bulkBoxesVal = document.getElementById('editBulkBoxes').value;
+
   if (capsVal !== '') {
-    inventoryData.universal.caps = Math.max(0, parseInt(capsVal));
+    const prev = inventoryData.universal.caps;
+    const next = Math.max(0, parseInt(capsVal));
+    if (prev !== next) {
+      changes.push(`Крышки ${next > prev ? '+' : ''}${next - prev}`);
+    }
+    inventoryData.universal.caps = next;
     changed = true;
   }
   if (bottlesVal !== '') {
-    inventoryData.universal.bottles = Math.max(0, parseInt(bottlesVal));
+    const prev = inventoryData.universal.bottles;
+    const next = Math.max(0, parseInt(bottlesVal));
+    if (prev !== next) {
+      changes.push(`Флакончики ${next > prev ? '+' : ''}${next - prev}`);
+    }
+    inventoryData.universal.bottles = next;
     changed = true;
   }
   if (instrVal !== '') {
-    inventoryData.universal.instructions = Math.max(0, parseInt(instrVal));
+    const prev = inventoryData.universal.instructions;
+    const next = Math.max(0, parseInt(instrVal));
+    if (prev !== next) {
+      changes.push(`Инструкции ${next > prev ? '+' : ''}${next - prev}`);
+    }
+    inventoryData.universal.instructions = next;
     changed = true;
   }
   if (packetsVal !== '') {
-    inventoryData.universal.packets = Math.max(0, parseInt(packetsVal));
+    const prev = inventoryData.universal.packets;
+    const next = Math.max(0, parseInt(packetsVal));
+    if (prev !== next) {
+      changes.push(`Пакетики ${next > prev ? '+' : ''}${next - prev}`);
+    }
+    inventoryData.universal.packets = next;
     changed = true;
   }
   if (bulkBoxesVal !== '') {
-    inventoryData.universal.bulkBoxes = Math.max(0, parseInt(bulkBoxesVal));
+    const prev = inventoryData.universal.bulkBoxes;
+    const next = Math.max(0, parseInt(bulkBoxesVal));
+    if (prev !== next) {
+      changes.push(`Коробы ${next > prev ? '+' : ''}${next - prev}`);
+    }
+    inventoryData.universal.bulkBoxes = next;
     changed = true;
   }
+
   if (changed) {
-    appendHistoryEntry('edit', 'Обновлены универсальные расходники.');
+    appendHistoryEntry('edit', changes.length ? changes.join('<br>') : 'Значения введены без изменения остатков.');
     saveInventoryData();
     renderAll();
     showNotification('Универсальные расходники обновлены', 'success');
@@ -815,23 +868,33 @@ function applySingleOilEdit() {
   }
   const oil = inventoryData.oils[oilName];
   let changed = false;
+  const changes = [];
   const mlVal = document.getElementById('editOilMl').value;
   const boxesVal = document.getElementById('editOilBoxes').value;
   const labelsVal = document.getElementById('editOilLabels').value;
   if (mlVal !== '') {
-    oil.ml = Math.max(0, parseInt(mlVal));
+    const prev = oil.ml;
+    const next = Math.max(0, parseInt(mlVal));
+    if (prev !== next) changes.push(`Масло ${oilName} ${next > prev ? '+' : ''}${next - prev}`);
+    oil.ml = next;
     changed = true;
   }
   if (boxesVal !== '') {
-    oil.boxes = Math.max(0, parseInt(boxesVal));
+    const prev = oil.boxes;
+    const next = Math.max(0, parseInt(boxesVal));
+    if (prev !== next) changes.push(`Коробки ${oilName} ${next > prev ? '+' : ''}${next - prev}`);
+    oil.boxes = next;
     changed = true;
   }
   if (labelsVal !== '') {
-    oil.labels = Math.max(0, parseInt(labelsVal));
+    const prev = oil.labels;
+    const next = Math.max(0, parseInt(labelsVal));
+    if (prev !== next) changes.push(`Этикетки ${oilName} ${next > prev ? '+' : ''}${next - prev}`);
+    oil.labels = next;
     changed = true;
   }
   if (changed) {
-    appendHistoryEntry('edit', `Изменены остатки масла "${oilName}".`);
+    appendHistoryEntry('edit', changes.length ? changes.join('<br>') : `Поля масла ${oilName} сохранены без изменения значений.`);
     saveInventoryData();
     renderAll();
     showNotification(`Данные масла "${oilName}" обновлены`, 'success');
@@ -854,16 +917,21 @@ function applyBatchOilEdit() {
     return;
   }
   const newMl = Math.max(0, parseInt(newMlStr));
+  const changes = [];
   selectedOptions.forEach(name => {
     if (inventoryData.oils[name]) {
+      const prev = inventoryData.oils[name].ml;
       inventoryData.oils[name].ml = newMl;
+      if (prev !== newMl) {
+        changes.push(`Масло ${name} ${newMl > prev ? '+' : ''}${newMl - prev}`);
+      }
     }
   });
   // очистить поле ввода
   document.getElementById('batchOilMl').value = '';
   // сбросить выбор (опционально)
   // selectElem.selectedIndex = -1;
-  appendHistoryEntry('edit', `Массовое изменение для ${selectedOptions.length} масел: новое значение ${newMl} мл.`);
+  appendHistoryEntry('edit', changes.length ? changes.join('<br>') : 'Массовое сохранение без изменения значений.');
   saveInventoryData();
   renderAll();
   showNotification(`Обновлены ${selectedOptions.length} масел`, 'success');
@@ -998,6 +1066,10 @@ function toggleMobileProductionPopup(show) {
 window.editOil = function(oilName) {
   document.getElementById('editOilSelect').value = oilName;
   document.getElementById('editOilSelect').dispatchEvent(new Event('change'));
-  // Прокрутка к разделу редактирования для удобства
-  document.getElementById('edit').scrollIntoView({ behavior: 'smooth' });
+  const productionInput = document.getElementById('productionOilSelect');
+  if (productionInput) {
+    productionInput.value = oilName;
+    selectedProductionOil = oilName;
+    updateProductionPreview();
+  }
 };
