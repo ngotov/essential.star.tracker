@@ -21,6 +21,7 @@
         <div class="container">
             <div class="logo">Essential Star</div>
             <nav class="nav-links">
+                <a href="#history">История</a>
                 <a href="#statistics">Статистика</a>
                 <a href="#list">Масла</a>
                 <a href="#edit">Редактирование</a>
@@ -34,6 +35,24 @@
     </header>
 
     <main class="container">
+        <section id="history" class="section">
+            <h2 class="section-title">История изменений</h2>
+            <div id="historyAuthCard" class="card edit-auth-card">
+                <div class="field">
+                    <label for="historyPasswordInput">Введите пароль</label>
+                    <input type="password" id="historyPasswordInput" placeholder="Пароль" />
+                </div>
+                <div class="actions">
+                    <button id="historyPasswordButton" type="button">Открыть историю</button>
+                </div>
+                <div id="historyPasswordError" class="error-message"></div>
+            </div>
+            <div id="historySection" class="card" style="display:none;">
+                <p class="subtext">Показываются изменения за последние 3 месяца.</p>
+                <div id="historyList" class="history-list"></div>
+            </div>
+        </section>
+
         <!-- Раздел статистики и расходников -->
         <section id="statistics" class="section">
             <h2 class="section-title">Склад эфирных масел</h2>
@@ -71,32 +90,34 @@
                         </div>
                     </div>
                 </div>
-                <!-- Карточка доступа к производству (пароль). Изначально видна, потом скрывается -->
-                <div id="productionAuthCard" class="card edit-auth-card">
-                    <h3 class="section-title">Доступ к производству</h3>
-                    <div class="field">
-                        <label for="productionPasswordInput">Введите пароль</label>
-                        <input type="password" id="productionPasswordInput" placeholder="Пароль" />
-                    </div>
-                    <div class="actions">
-                        <button id="productionPasswordButton" type="button">Войти</button>
-                    </div>
-                    <div id="productionPasswordError" class="error-message"></div>
-                </div>
-                <!-- Карточка ввода производства (скрыта по умолчанию) -->
-                <div id="productionSection" class="card" style="display:none;">
-                    <h3 class="section-title">Ввод произведённой продукции</h3>
-                    <div class="production-form">
+                <div id="productionPanel">
+                    <!-- Карточка доступа к производству (пароль). Изначально видна, потом скрывается -->
+                    <div id="productionAuthCard" class="card edit-auth-card production-card">
+                        <h3 class="section-title">Доступ к производству</h3>
                         <div class="field">
-                            <label for="productionOilSelect">Выберите масло</label>
-                            <select id="productionOilSelect"></select>
+                            <label for="productionPasswordInput">Введите пароль</label>
+                            <input type="password" id="productionPasswordInput" placeholder="Пароль" />
                         </div>
-                        <div class="field">
-                            <label for="productionQuantity">Количество произведённых единиц</label>
-                            <input type="number" id="productionQuantity" min="1" value="1">
+                        <div class="actions">
+                            <button id="productionPasswordButton" type="button">Войти</button>
                         </div>
-                        <button id="submitProduction" type="button">Зафиксировать производство</button>
-                        <div id="productionPreview" class="hidden"></div>
+                        <div id="productionPasswordError" class="error-message"></div>
+                    </div>
+                    <!-- Карточка ввода производства (скрыта по умолчанию) -->
+                    <div id="productionSection" class="card production-card" style="display:none;">
+                        <h3 class="section-title">Ввод произведённой продукции</h3>
+                        <div class="production-form">
+                            <div class="field">
+                                <label for="productionOilSelect">Выберите масло</label>
+                                <select id="productionOilSelect"></select>
+                            </div>
+                            <div class="field">
+                                <label for="productionQuantity">Количество произведённых единиц</label>
+                                <input type="number" id="productionQuantity" min="1" value="1">
+                            </div>
+                            <button id="submitProduction" type="button">Зафиксировать производство</button>
+                            <div id="productionPreview" class="hidden"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -240,6 +261,11 @@
 
     <!-- Кнопка возврата вверх. Появляется после прокрутки вниз -->
     <button id="scrollToTopBtn" class="scroll-to-top" aria-label="Вернуться наверх">▲</button>
+    <button id="mobileProductionOpenBtn" class="mobile-production-btn" type="button" aria-label="Открыть производство">Производство</button>
+
+    <div id="mobileProductionOverlay" class="mobile-production-overlay" aria-hidden="true">
+        <button id="mobileProductionCloseBtn" class="mobile-production-close" type="button" aria-label="Закрыть производство">✕</button>
+    </div>
 
     <!-- Основной скрипт -->
     <script src="script.js"></script>
