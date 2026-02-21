@@ -66,6 +66,7 @@ const SUPPLY_ICONS = {
 };
 
 const UNITS_PER_BULK_BOX = 25;
+const OIL_BOXES_PER_UNIT = 0.04;
 
 // Эмодзи для отображения рядом с названием каждого масла. Если масло отсутствует в списке,
 // по умолчанию используется символ флакона. Это позволяет быстро визуально различать масла.
@@ -460,8 +461,8 @@ function renderUniversalSupplies() {
     { type: 'caps', name: 'Крышки', value: caps, max: 5000 },
     { type: 'bottles', name: 'Флакончики', value: bottles, max: 5000 },
     { type: 'instructions', name: 'Инструкции', value: instructions, max: 5000 },
-    { type: 'packets', name: 'Пакетики', value: packets, max: 5000 },
-    { type: 'bulkBoxes', name: 'Коробы', value: bulkBoxes, max: 5000 }
+    { type: 'packets', name: 'Пакетики', value: packets, max: 3000 },
+    { type: 'bulkBoxes', name: 'Коробы', value: bulkBoxes, max: 200 }
   ];
   container.innerHTML = supplies.map(item => {
     const percent = Math.min(100, (item.value / item.max) * 100);
@@ -522,7 +523,7 @@ function renderOilsTable() {
       <tr class="${status.class}">
         <td data-label="Масло"><img src="oil_icons/${iconFile}" alt="${name}" class="oil-img-icon">${name}</td>
         <td data-label="Объём">${data.ml.toLocaleString()} мл</td>
-        <td data-label="Коробки">${data.boxes.toLocaleString()}</td>
+        <td data-label="Коробки">${Math.floor(data.boxes).toLocaleString()}</td>
         <td data-label="Этикетки">${data.labels.toLocaleString()}</td>
         <td data-label="Статус"><span class="status-label">${status.text}</span></td>
         <td data-label="Действия"><button class="edit-button" onclick="editOil('${name}')" aria-label="Редактировать">✏️</button></td>
@@ -631,7 +632,7 @@ function updateProductionPreview() {
     inventoryData.universal.packets,
     inventoryData.universal.bulkBoxes * UNITS_PER_BULK_BOX,
     Math.floor(oilData.ml / 10),
-    oilData.boxes,
+    Math.floor(oilData.boxes / OIL_BOXES_PER_UNIT),
     oilData.labels
   );
   preview.innerHTML = `
@@ -643,7 +644,7 @@ function updateProductionPreview() {
         <div>Пакетики: <strong>${quantity} шт</strong></div>
         <div>Коробы: <strong>${requiredBulkBoxes} шт</strong></div>
         <div>Масло ${oilName}: <strong>${requiredMl} мл</strong></div>
-        <div>Коробки: <strong>${quantity} шт</strong></div>
+        <div>Коробки: <strong>${Math.floor(quantity * OIL_BOXES_PER_UNIT)} шт</strong></div>
         <div>Этикетки: <strong>${quantity} шт</strong></div>
     </div>
     ${maxUnitsByResources < quantity ? 
@@ -691,8 +692,9 @@ function submitProduction() {
     showNotification(`Недостаточно масла ${oilName}. Нужно: ${requiredMl} мл, есть: ${oilData.ml} мл`, 'error');
     return;
   }
-  if (oilData.boxes < quantity) {
-    showNotification(`Недостаточно коробок для ${oilName}. Нужно: ${quantity}, есть: ${oilData.boxes}`, 'error');
+  const requiredOilBoxes = quantity * OIL_BOXES_PER_UNIT;
+  if (oilData.boxes < requiredOilBoxes) {
+    showNotification(`Недостаточно коробок для ${oilName}. Нужно: ${Math.floor(requiredOilBoxes)}, есть: ${Math.floor(oilData.boxes)}`, 'error');
     return;
   }
   if (oilData.labels < quantity) {
@@ -706,9 +708,9 @@ function submitProduction() {
   inventoryData.universal.packets -= quantity;
   inventoryData.universal.bulkBoxes -= requiredBulkBoxes;
   oilData.ml -= requiredMl;
-  oilData.boxes -= quantity;
+  oilData.boxes -= requiredOilBoxes;
   oilData.labels -= quantity;
-  appendHistoryEntry('production', `Произведено: ${quantity} шт масла "${oilName}". Списано: масло ${oilName} -${requiredMl} мл, коробки ${oilName} -${quantity} шт, этикетки ${oilName} -${quantity} шт, крышки -${quantity} шт, флакончики -${quantity} шт, инструкции -${quantity} шт, пакетики -${quantity} шт, коробы -${requiredBulkBoxes} шт.`);
+  appendHistoryEntry('production', `Произведено: ${quantity} шт масла "${oilName}". Списано: масло ${oilName} -${requiredMl} мл, коробки ${oilName} -${Math.floor(requiredOilBoxes)} шт, этикетки ${oilName} -${quantity} шт, крышки -${quantity} шт, флакончики -${quantity} шт, инструкции -${quantity} шт, пакетики -${quantity} шт, коробы -${requiredBulkBoxes} шт.`);
   saveInventoryData();
   renderAll();
   showNotification(`Производство ${quantity} ед. масла "${oilName}" зафиксировано`, 'success');
