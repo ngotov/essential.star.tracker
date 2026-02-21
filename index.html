@@ -35,24 +35,6 @@
     </header>
 
     <main class="container">
-        <section id="history" class="section">
-            <h2 class="section-title">История изменений</h2>
-            <div id="historyAuthCard" class="card edit-auth-card">
-                <div class="field">
-                    <label for="historyPasswordInput">Введите пароль</label>
-                    <input type="password" id="historyPasswordInput" placeholder="Пароль" />
-                </div>
-                <div class="actions">
-                    <button id="historyPasswordButton" type="button">Открыть историю</button>
-                </div>
-                <div id="historyPasswordError" class="error-message"></div>
-            </div>
-            <div id="historySection" class="card" style="display:none;">
-                <p class="subtext">Показываются изменения за последние 3 месяца.</p>
-                <div id="historyList" class="history-list"></div>
-            </div>
-        </section>
-
         <!-- Раздел статистики и расходников -->
         <section id="statistics" class="section">
             <h2 class="section-title">Склад эфирных масел</h2>
@@ -251,6 +233,25 @@
                 </div>
             </div>
         </section>
+        <section id="history" class="section">
+            <h2 class="section-title">История изменений</h2>
+            <div id="historyAuthCard" class="card edit-auth-card">
+                <div class="field">
+                    <label for="historyPasswordInput">Введите пароль</label>
+                    <input type="password" id="historyPasswordInput" placeholder="Пароль" />
+                </div>
+                <div class="actions">
+                    <button id="historyPasswordButton" type="button">Открыть историю</button>
+                </div>
+                <div id="historyPasswordError" class="error-message"></div>
+            </div>
+            <div id="historySection" class="card" style="display:none;">
+                <p class="subtext">Показываются изменения за последние 3 месяца.</p>
+                <div id="historyList" class="history-list"></div>
+            </div>
+        </section>
+
+
     </main>
 
     <!-- Подвал сайта -->
