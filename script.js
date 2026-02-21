@@ -37,8 +37,9 @@ const OILS_LIST = [
 // Начальные значения. Изменены согласно новым требованиям:
 //  - Масла имеют 2000 мл, 200 коробок и 3000 этикеток.
 //  - Универсальные расходники (крышки, флакончики, инструкции) имеют 5000 шт.
+//  - Пакетики имеют максимум 3000 шт, коробы — 200 шт.
 const INITIAL_DATA = {
-  universal: { caps: 5000, bottles: 5000, instructions: 5000, packets: 5000, bulkBoxes: 5000 },
+  universal: { caps: 5000, bottles: 5000, instructions: 5000, packets: 3000, bulkBoxes: 200 },
   oils: OILS_LIST.reduce((acc, oil) => {
     acc[oil] = { ml: 2000, boxes: 200, labels: 3000 };
     return acc;
@@ -65,7 +66,9 @@ const SUPPLY_ICONS = {
   bulkBoxes: '📦'
 };
 
-const UNITS_PER_BULK_BOX = 25;
+const PACKETS_MAX = 3000;
+const BULK_BOXES_MAX = 200;
+const BULK_BOX_PER_UNIT = 0.04;
 
 // Эмодзи для отображения рядом с названием каждого масла. Если масло отсутствует в списке,
 // по умолчанию используется символ флакона. Это позволяет быстро визуально различать масла.
@@ -272,8 +275,8 @@ function normalizeInventoryData() {
   inventoryData.universal.caps = Number.isFinite(inventoryData.universal.caps) ? inventoryData.universal.caps : 0;
   inventoryData.universal.bottles = Number.isFinite(inventoryData.universal.bottles) ? inventoryData.universal.bottles : 0;
   inventoryData.universal.instructions = Number.isFinite(inventoryData.universal.instructions) ? inventoryData.universal.instructions : 0;
-  inventoryData.universal.packets = Number.isFinite(inventoryData.universal.packets) ? inventoryData.universal.packets : 5000;
-  inventoryData.universal.bulkBoxes = Number.isFinite(inventoryData.universal.bulkBoxes) ? inventoryData.universal.bulkBoxes : 5000;
+  inventoryData.universal.packets = Number.isFinite(inventoryData.universal.packets) ? inventoryData.universal.packets : PACKETS_MAX;
+  inventoryData.universal.bulkBoxes = Number.isFinite(inventoryData.universal.bulkBoxes) ? inventoryData.universal.bulkBoxes : BULK_BOXES_MAX;
   inventoryData.history = pruneHistoryEntries(Array.isArray(inventoryData.history) ? inventoryData.history : []);
 }
 
@@ -455,13 +458,14 @@ function renderAll() {
 function renderUniversalSupplies() {
   const container = document.getElementById('universalSupplies');
   const { caps, bottles, instructions, packets, bulkBoxes } = inventoryData.universal;
-  // Максимальное значение для шкалы расходников — 5000 единиц
+  // Максимальные значения для шкал расходников.
+  const displayedBulkBoxes = Math.max(0, Math.floor(bulkBoxes));
   const supplies = [
     { type: 'caps', name: 'Крышки', value: caps, max: 5000 },
     { type: 'bottles', name: 'Флакончики', value: bottles, max: 5000 },
     { type: 'instructions', name: 'Инструкции', value: instructions, max: 5000 },
-    { type: 'packets', name: 'Пакетики', value: packets, max: 5000 },
-    { type: 'bulkBoxes', name: 'Коробы', value: bulkBoxes, max: 5000 }
+    { type: 'packets', name: 'Пакетики', value: packets, max: PACKETS_MAX },
+    { type: 'bulkBoxes', name: 'Коробы', value: displayedBulkBoxes, max: BULK_BOXES_MAX }
   ];
   container.innerHTML = supplies.map(item => {
     const percent = Math.min(100, (item.value / item.max) * 100);
@@ -622,14 +626,14 @@ function updateProductionPreview() {
   const oilData = inventoryData.oils[oilName];
   if (!oilData) return;
   const requiredMl = quantity * 10;
-  const requiredBulkBoxes = Math.ceil(quantity / UNITS_PER_BULK_BOX);
+  const requiredBulkBoxes = quantity * BULK_BOX_PER_UNIT;
   // Рассчитываем максимальное количество единиц, которое можно произвести исходя из доступных ресурсов.
   const maxUnitsByResources = Math.min(
     inventoryData.universal.caps,
     inventoryData.universal.bottles,
     inventoryData.universal.instructions,
     inventoryData.universal.packets,
-    inventoryData.universal.bulkBoxes * UNITS_PER_BULK_BOX,
+    Math.floor(inventoryData.universal.bulkBoxes / BULK_BOX_PER_UNIT),
     Math.floor(oilData.ml / 10),
     oilData.boxes,
     oilData.labels
@@ -641,7 +645,7 @@ function updateProductionPreview() {
         <div>Флакончики: <strong>${quantity} шт</strong></div>
         <div>Инструкции: <strong>${quantity} шт</strong></div>
         <div>Пакетики: <strong>${quantity} шт</strong></div>
-        <div>Коробы: <strong>${requiredBulkBoxes} шт</strong></div>
+        <div>Коробы: <strong>${requiredBulkBoxes.toFixed(2)} шт</strong></div>
         <div>Масло ${oilName}: <strong>${requiredMl} мл</strong></div>
         <div>Коробки: <strong>${quantity} шт</strong></div>
         <div>Этикетки: <strong>${quantity} шт</strong></div>
@@ -665,7 +669,7 @@ function submitProduction() {
   const oilData = inventoryData.oils[oilName];
   if (!oilData) return;
   const requiredMl = quantity * 10;
-  const requiredBulkBoxes = Math.ceil(quantity / UNITS_PER_BULK_BOX);
+  const requiredBulkBoxes = quantity * BULK_BOX_PER_UNIT;
   // Проверка достаточности материалов
   if (inventoryData.universal.caps < quantity) {
     showNotification(`Недостаточно крышек. Нужно: ${quantity}, есть: ${inventoryData.universal.caps}`, 'error');
@@ -684,7 +688,7 @@ function submitProduction() {
     return;
   }
   if (inventoryData.universal.bulkBoxes < requiredBulkBoxes) {
-    showNotification(`Недостаточно коробов. Нужно: ${requiredBulkBoxes}, есть: ${inventoryData.universal.bulkBoxes}`, 'error');
+    showNotification(`Недостаточно коробов. Нужно: ${requiredBulkBoxes.toFixed(2)}, есть: ${Math.floor(inventoryData.universal.bulkBoxes)}`, 'error');
     return;
   }
   if (oilData.ml < requiredMl) {
@@ -708,7 +712,7 @@ function submitProduction() {
   oilData.ml -= requiredMl;
   oilData.boxes -= quantity;
   oilData.labels -= quantity;
-  appendHistoryEntry('production', `Произведено: ${quantity} шт масла "${oilName}". Списано: масло ${oilName} -${requiredMl} мл, коробки ${oilName} -${quantity} шт, этикетки ${oilName} -${quantity} шт, крышки -${quantity} шт, флакончики -${quantity} шт, инструкции -${quantity} шт, пакетики -${quantity} шт, коробы -${requiredBulkBoxes} шт.`);
+  appendHistoryEntry('production', `Произведено: ${quantity} шт масла "${oilName}". Списано: масло ${oilName} -${requiredMl} мл, коробки ${oilName} -${quantity} шт, этикетки ${oilName} -${quantity} шт, крышки -${quantity} шт, флакончики -${quantity} шт, инструкции -${quantity} шт, пакетики -${quantity} шт, коробы -${requiredBulkBoxes.toFixed(2)} шт.`);
   saveInventoryData();
   renderAll();
   showNotification(`Производство ${quantity} ед. масла "${oilName}" зафиксировано`, 'success');
