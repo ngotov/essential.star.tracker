@@ -17,7 +17,6 @@ firebase.initializeApp({
 const db = firebase.database();
 const inventoryRef = db.ref("inventory");
 const HISTORY_RETENTION_DAYS = 90;
-const HISTORY_PASSWORD = '1510';
 
 
 // ===== ДАННЫЕ =====
@@ -69,6 +68,105 @@ const SUPPLY_ICONS = {
 const PACKETS_MAX = 3000;
 const BULK_BOXES_MAX = 200;
 const BULK_BOX_PER_UNIT = 0.04;
+
+
+const AUTH_CONFIG = {
+  history: {
+    inputId: 'historyPasswordInput',
+    errorId: 'historyPasswordError',
+    statusId: 'historyAuthStatus',
+    buttonId: 'historyPasswordButton',
+    authCardId: 'historyAuthCard',
+    sectionId: 'historySection',
+    saltB64: 'CifGynpxwoEg0yNI7NRAgw==',
+    hashB64: 'TlrMWPIa4UjDjtvF+QXn4+P6T5XLPhxt7WkMzmZp/AQ='
+  },
+  edit: {
+    inputId: 'editPasswordInput',
+    errorId: 'editPasswordError',
+    statusId: 'editAuthStatus',
+    buttonId: 'editPasswordButton',
+    authCardId: 'editAuthCard',
+    sectionSelector: '.edit-section',
+    saltB64: 'Bfq9M/YWxnbN8eTF4Ez0OQ==',
+    hashB64: 'CtLDL4LI23yhYWLRQ8geroA0YU8+64CQ2ms5I6zlzZ4='
+  },
+  production: {
+    inputId: 'productionPasswordInput',
+    errorId: 'productionPasswordError',
+    statusId: 'productionAuthStatus',
+    buttonId: 'productionPasswordButton',
+    authCardId: 'productionAuthCard',
+    sectionId: 'productionSection',
+    saltB64: 'EN3R0uTSvbGjroeRNs8Azw==',
+    hashB64: 'mHFag9b9hd6ZWUlWtQLKVlZE09xvhxvVelHVGQDhcJ0='
+  }
+};
+
+function base64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function timingSafeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
+}
+
+async function derivePasswordHash(password, saltBytes) {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: saltBytes,
+      iterations: 210000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    256
+  );
+
+  return new Uint8Array(bits);
+}
+
+function setAuthLoading(zoneKey, loading) {
+  const cfg = AUTH_CONFIG[zoneKey];
+  if (!cfg) return;
+  const button = document.getElementById(cfg.buttonId);
+  const status = document.getElementById(cfg.statusId);
+  if (button) {
+    button.disabled = loading;
+    button.textContent = loading ? 'Проверка…' : (zoneKey === 'history' ? 'Открыть историю' : 'Войти');
+  }
+  if (status) {
+    status.textContent = loading ? 'Проверяем доступ…' : '';
+  }
+}
+
+async function verifyZonePassword(zoneKey, rawPassword) {
+  const cfg = AUTH_CONFIG[zoneKey];
+  if (!cfg) return false;
+  const saltBytes = base64ToUint8Array(cfg.saltB64);
+  const expectedHash = base64ToUint8Array(cfg.hashB64);
+  const actualHash = await derivePasswordHash(rawPassword, saltBytes);
+  return timingSafeEqual(actualHash, expectedHash);
+}
 
 // Эмодзи для отображения рядом с названием каждого масла. Если масло отсутствует в списке,
 // по умолчанию используется символ флакона. Это позволяет быстро визуально различать масла.
@@ -339,7 +437,7 @@ function initializeEventListeners() {
   const editPasswordBtn = document.getElementById('editPasswordButton');
   const editPasswordInput = document.getElementById('editPasswordInput');
   if (editPasswordBtn && editPasswordInput) {
-    editPasswordBtn.addEventListener('click', checkEditPassword);
+    editPasswordBtn.addEventListener('click', () => { checkEditPassword(); });
     editPasswordInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') {
         checkEditPassword();
@@ -408,7 +506,7 @@ function initializeEventListeners() {
   const productionPwdBtn = document.getElementById('productionPasswordButton');
   const productionPwdInput = document.getElementById('productionPasswordInput');
   if (productionPwdBtn && productionPwdInput) {
-    productionPwdBtn.addEventListener('click', checkProductionPassword);
+    productionPwdBtn.addEventListener('click', () => { checkProductionPassword(); });
     productionPwdInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') {
         checkProductionPassword();
@@ -419,7 +517,7 @@ function initializeEventListeners() {
   const historyPwdBtn = document.getElementById('historyPasswordButton');
   const historyPwdInput = document.getElementById('historyPasswordInput');
   if (historyPwdBtn && historyPwdInput) {
-    historyPwdBtn.addEventListener('click', checkHistoryPassword);
+    historyPwdBtn.addEventListener('click', () => { checkHistoryPassword(); });
     historyPwdInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') {
         checkHistoryPassword();
@@ -981,71 +1079,55 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
-// Проверка пароля для доступа к блоку редактирования. При правильном пароле показываем
-// скрытый блок и скрываем форму ввода. При неправильном — выводим сообщение об ошибке.
-function checkEditPassword() {
-  const input = document.getElementById('editPasswordInput');
-  const errorDiv = document.getElementById('editPasswordError');
+async function unlockProtectedZone(zoneKey, onSuccess, invalidMessage = 'Неверный пароль') {
+  const cfg = AUTH_CONFIG[zoneKey];
+  if (!cfg) return;
+
+  const input = document.getElementById(cfg.inputId);
+  const errorDiv = document.getElementById(cfg.errorId);
   if (!input) return;
+
   const pwd = input.value;
-  if (pwd === '671124') {
-    // Скрываем форму авторизации и показываем блок редактирования
-    const authCard = document.getElementById('editAuthCard');
-    const editSection = document.querySelector('.edit-section');
+  if (errorDiv) errorDiv.textContent = '';
+
+  try {
+    setAuthLoading(zoneKey, true);
+    const isValid = await verifyZonePassword(zoneKey, pwd);
+    if (!isValid) {
+      if (errorDiv) errorDiv.textContent = invalidMessage;
+      return;
+    }
+
+    const authCard = document.getElementById(cfg.authCardId);
+    const section = cfg.sectionId ? document.getElementById(cfg.sectionId) : document.querySelector(cfg.sectionSelector);
     if (authCard) authCard.style.display = 'none';
-    if (editSection) editSection.style.display = '';
-    // Очищаем сообщение и поле
-    if (errorDiv) errorDiv.textContent = '';
+    if (section) section.style.display = '';
+
     input.value = '';
-    // Обновить селекты и значения, если необходимо
-    populateSelects();
-  } else {
-    // Неправильный пароль
-    if (errorDiv) errorDiv.textContent = 'Это для Никиты!';
+    if (typeof onSuccess === 'function') onSuccess();
+  } catch (error) {
+    if (errorDiv) errorDiv.textContent = 'Ошибка проверки доступа';
+  } finally {
+    setAuthLoading(zoneKey, false);
   }
 }
 
-// Проверка пароля для доступа к блоку ввода произведённой продукции. При правильном пароле
-// скрываем карточку авторизации и показываем блок ввода. Если пароль неверен — показываем
-// сообщение об ошибке. Пароль хранится в коде как '23040'. После успешного входа
-// обновляем предпросмотр производства.
+function checkEditPassword() {
+  unlockProtectedZone('edit', () => {
+    populateSelects();
+  }, 'Неверный пароль');
+}
+
 function checkProductionPassword() {
-  const input = document.getElementById('productionPasswordInput');
-  const errorDiv = document.getElementById('productionPasswordError');
-  if (!input) return;
-  const pwd = input.value;
-  if (pwd === '23040') {
-    // Скрываем форму авторизации и показываем секцию производства
-    const authCard = document.getElementById('productionAuthCard');
-    const productionSection = document.getElementById('productionSection');
-    if (authCard) authCard.style.display = 'none';
-    if (productionSection) productionSection.style.display = '';
-    // Очищаем сообщение об ошибке и поле
-    if (errorDiv) errorDiv.textContent = '';
-    input.value = '';
-    // Обновляем предпросмотр, чтобы поле расчёта отобразилось корректно при открытии
+  unlockProtectedZone('production', () => {
     updateProductionPreview();
-  } else {
-    // Неверный пароль
-    if (errorDiv) errorDiv.textContent = 'Это для Тани!';
-  }
+  }, 'Неверный пароль');
 }
 
 function checkHistoryPassword() {
-  const input = document.getElementById('historyPasswordInput');
-  const errorDiv = document.getElementById('historyPasswordError');
-  if (!input) return;
-  if (input.value === HISTORY_PASSWORD) {
-    const authCard = document.getElementById('historyAuthCard');
-    const section = document.getElementById('historySection');
-    if (authCard) authCard.style.display = 'none';
-    if (section) section.style.display = '';
-    if (errorDiv) errorDiv.textContent = '';
-    input.value = '';
+  unlockProtectedZone('history', () => {
     renderHistory();
-  } else if (errorDiv) {
-    errorDiv.textContent = 'Неверный пароль';
-  }
+  }, 'Неверный пароль');
 }
 
 function toggleMobileProductionPopup(show) {
