@@ -90,6 +90,7 @@
                             <button id="productionPasswordButton" type="button">Войти</button>
                         </div>
                         <div id="productionPasswordError" class="error-message"></div>
+                        <div id="productionAuthStatus" class="auth-status" aria-live="polite"></div>
                     </div>
                     <!-- Карточка ввода производства (скрыта по умолчанию) -->
                     <div id="productionSection" class="card production-card" style="display:none;">
@@ -166,6 +167,7 @@
                     <button id="editPasswordButton" type="button">Войти</button>
                 </div>
                 <div id="editPasswordError" class="error-message"></div>
+                <div id="editAuthStatus" class="auth-status" aria-live="polite"></div>
             </div>
             <!-- Реальный блок ручного редактирования, скрыт по умолчанию -->
             <div class="card edit-section" style="display:none;">
@@ -250,6 +252,7 @@
                     <button id="historyPasswordButton" type="button">Открыть историю</button>
                 </div>
                 <div id="historyPasswordError" class="error-message"></div>
+                <div id="historyAuthStatus" class="auth-status" aria-live="polite"></div>
             </div>
             <div id="historySection" class="card" style="display:none;">
                 <p class="subtext">Показываются изменения за последние 3 месяца.</p>
